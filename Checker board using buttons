@@ -1,0 +1,70 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+
+
+public class Checkers extends JFrame
+{
+        JLabel playerTurn = new JLabel("Black Starts");
+        private JButton[][] checkerBoard = new JButton[8][8];
+        public Checkers()
+        {
+                super("Checkers");
+                this.setSize(500, 500);
+                this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                JPanel p1 = new JPanel();
+                p1.setSize(500, 500);
+                p1.setLayout(new GridLayout(8,8));
+                /*for(int box = 0; box<64; box++)
+                {
+                        JButton button = newButton(box);
+                        p1.add(button);
+                }*/
+                for (int ii = 0; ii < checkerBoard.length; ii++) {
+                  for (int jj = 0; jj < checkerBoard[ii].length; jj++) {
+                      JButton b = new JButton();
+                      b.setPreferredSize(new Dimension(50, 50));
+                     // our chess pieces are 64x64 px in size, so we'll
+                      // 'fill this in' using a transparent icon..
+  
+                      if ((jj % 2 == 1 && ii % 2 == 1)
+                        //) {
+                              || (jj % 2 == 0 && ii % 2 == 0)) {
+                          b.setBackground(Color.WHITE);
+                      } else {
+                          b.setBackground(Color.BLACK);
+                      }
+                      checkerBoard[jj][ii] = b;
+                      p1.add(checkerBoard[jj][ii]);     
+                  }
+                }
+                add(p1);
+                add(playerTurn, BorderLayout.SOUTH);
+                JMenu checkerMenu = new JMenu("File");
+                checkerMenu.setMnemonic('F');
+                JMenuItem newGame = new JMenuItem("New");
+                newGame.setMnemonic('N');
+                checkerMenu.add(newGame);
+                newGame.addActionListener(new ActionListener(){
+                        public void actionPerformed(ActionEvent e){
+                           new Checkers();      
+                        }
+                });
+                
+                JMenuBar bar = new JMenuBar();
+                bar.add(checkerMenu);
+                this.setJMenuBar(bar);
+                this.setVisible(true);
+        }
+        
+        /*private JButton newButton(int box){
+          
+                        
+        }*/
+        public static void main(String[] args)
+        {
+                
+                new Checkers();
+        }
+        
+}
