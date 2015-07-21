@@ -20,8 +20,8 @@ public class Slot {
 	char turn;
 	boolean isKing;
 	boolean valid;
-	ArrayList<Integer> xValid;
-	ArrayList<Integer> yValid;
+	ArrayList<Integer> colValid;
+	ArrayList<Integer> rowValid;
 
 	
 	//constructor for slot w/o a piece
@@ -35,8 +35,14 @@ public class Slot {
 			turn = t;
 			isKing = false;
 		}
-		xValid = new <Integer> ArrayList();
-		yValid = new <Integer> ArrayList();
+		else{
+			
+			isPiece = false;
+			turn = t;
+			isKing = false;
+		}
+		colValid = new ArrayList<Integer>();
+		rowValid = new ArrayList<Integer>();
 		//code that both slot and piece will run
 		b = new JButton();
 		border= new LineBorder(Color.YELLOW, 5);
@@ -53,8 +59,8 @@ public class Slot {
 		this.isPiece = s.isPiece;
 		this.turn = s.turn;
 		this.isKing = s.isKing;
-		this.xValid = s.xValid;
-		this.yValid = s.yValid;
+		this.colValid = s.colValid;
+		this.rowValid = s.rowValid;
 
 		
 	}
@@ -77,9 +83,9 @@ public class Slot {
 		valid = b;
 	}
 	
-	public void addValid(int y, int x){
-		xValid.add(x);
-		yValid.add(y);
+	public void addValid(int row, int col){
+		rowValid.add(row);
+		colValid.add(col);
 	}
 	
 	public boolean getValid(){
