@@ -1,4 +1,4 @@
-package New_Checkers;
+package checkers2;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -214,7 +214,7 @@ public class GamePanel extends JFrame {
 							if (!boardArray[oldRow+2][oldCol-2].isPiece){
 								//TODO: remove piece at location boardArray[row][col] and decrement piece counter for black
 								//if place you would jump to is not a piece then set valid 
-								System.out.println("JUMP: old (row,col)= (" + oldRow + "," + oldCol +")" + "new (row,col) being added as valid= (" + (oldRow-2) + "," + (oldCol+2) +")");
+								//System.out.println("JUMP: old (row,col)= (" + oldRow + "," + oldCol +")" + "new (row,col) being added as valid= (" + (oldRow-2) + "," + (oldCol+2) +")");
 								p.addValid(oldRow+2, oldCol-2);
 								p.setValid(true);
 							}
@@ -230,7 +230,7 @@ public class GamePanel extends JFrame {
 								//TODO: remove piece at location boardArray[row][col] and decrement piece counter for black
 								//if place you would jump to is not a piece then set valid 
 								p.addValid(oldRow - 2, oldCol-2);
-								System.out.println("JUMP: old (row,col)= (" + oldRow + "," + oldCol +")" + "new (row,col) being added as valid= (" + (oldRow-2) + "," + (oldCol-2) +")");
+								//System.out.println("JUMP: old (row,col)= (" + oldRow + "," + oldCol +")" + "new (row,col) being added as valid= (" + (oldRow-2) + "," + (oldCol-2) +")");
 								p.setValid(true);
 							}
 							else {
@@ -271,15 +271,14 @@ public class GamePanel extends JFrame {
 								p.setValid(false);
 							}
 						}
-
-					}	
-					else{
-						System.out.print("Problem Encountered 1");
 					}
-				}
+				}	
 				
-
+			else{
+				System.out.print("Problem Encountered 1");
 			}
+		}
+				
 			//handle situation in which piece is players own piece 
 			else{
 				p.setValid(false);
@@ -289,6 +288,7 @@ public class GamePanel extends JFrame {
 			p.addValid((row), (col));
 			p.setValid(true);
 		}
+		//printValid(p);
 	}
 
 	public boolean isValidKing(Slot p, int y, int x){
@@ -392,7 +392,6 @@ public class GamePanel extends JFrame {
 		if((row > 7 | col >7) | (row < 0 | col < 0)){
 			p.setValid(false);
 			return;
-
 		}	
 		if(boardArray[row][col].isPiece){
 					//handle situation in which there is a valid move that entails a jump
@@ -402,7 +401,7 @@ public class GamePanel extends JFrame {
 								if (!boardArray[oldRow+2][oldCol-2].isPiece){
 									//TODO: remove piece at location boardArray[row][col] and decrement piece counter for black
 									//if place you would jump to is not a piece then set valid 
-									System.out.println("JUMP: old (row,col)= (" + oldRow + "," + oldCol +")" + "new (row,col) being added as valid= (" + (oldRow-2) + "," + (oldCol+2) +")");
+									//System.out.println("JUMP: old (row,col)= (" + oldRow + "," + oldCol +")" + "new (row,col) being added as valid= (" + (oldRow-2) + "," + (oldCol+2) +")");
 									p.addValid(oldRow+2, oldCol-2);
 									p.setValid(true);
 									System.out.println("im here");
@@ -431,7 +430,7 @@ public class GamePanel extends JFrame {
 									//TODO: remove piece at location boardArray[row][col] and decrement piece counter for black
 									//if place you would jump to is not a piece then set valid 
 									p.addValid(oldRow - 2, oldCol-2);
-									System.out.println("JUMP: old (row,col)= (" + oldRow + "," + oldCol +")" + "new (row,col) being added as valid= (" + (oldRow-2) + "," + (oldCol-2) +")");
+									//System.out.println("JUMP: old (row,col)= (" + oldRow + "," + oldCol +")" + "new (row,col) being added as valid= (" + (oldRow-2) + "," + (oldCol-2) +")");
 									p.setValid(true);
 									System.out.println("im here");
 								}
@@ -467,11 +466,7 @@ public class GamePanel extends JFrame {
 		else{	//else being that the position is empty/contains a slot not a piece and hence is a valid move making this a valid piece
 			p.addValid((row), (col));
 			p.setValid(true);
-		}
-		
-
-		
-		
+		}	
 	}
 
 	//sets valid checkers that player can touch 
@@ -511,7 +506,7 @@ public class GamePanel extends JFrame {
 	}
 	
 	public class PieceHandler implements ActionListener{
-		private final New_Checkers.Slot piece;
+		private final checkers2.Slot piece;
 
 		public PieceHandler(Slot p) {
 			this.piece = p;
@@ -532,13 +527,23 @@ public class GamePanel extends JFrame {
 	            	}
 	            }
 	        }
-
+			
+			//empty valid arrays for all pieces of that turn that are valid, do this to instantiate the arrays with updated variables later
+			for (int row = 0; row <NBOX ; row++){
+				for (int col = 0; col <NBOX; col++){
+					if ((boardArray[row][col].isPiece && boardArray[row][col].getTurn() == prevPiece.getTurn() )){
+						if(boardArray[row][col].valid)
+							clearValid(boardArray[row][col]);
+					}
+				}
+			}
+			
 		}
 		
 	}
 	
 	public class SlotHandler implements ActionListener{
-		private New_Checkers.Slot slot;
+		private checkers2.Slot slot;
 		
 		public SlotHandler(Slot s){
 			this.slot = s;
@@ -609,7 +614,7 @@ public class GamePanel extends JFrame {
 			if(isJump(jumpFromCol, jumpToCol)){
 				//compare row values here to determine where jumped piece is then
 				//set it to jumpedPiece = boardArray[row][col]
-				System.out.println("JUMPED");
+				//System.out.println("JUMPED");
 				if(jumpFromCol < jumpToCol){
 					if(jumpFromRow < jumpToRow){
 						jumpedPiece = boardArray[jumpToRow-1][jumpToCol-1];
@@ -664,6 +669,8 @@ public class GamePanel extends JFrame {
 				deActivateBoard();
 				clearValid(this.slot);	//clear pieces valid moves for next turn
 			
+				
+				
 				if (this.slot.turn=='b'){
 					playerTurn.setText("Reds Turn");
 					/* call isKing method which will
@@ -694,7 +701,7 @@ public class GamePanel extends JFrame {
 	}
 	
 	public boolean isJump(int fromCol, int toCol){
-		System.out.println("jumped from col " + jumpFromCol + " to col " + jumpToCol);
+		//aSystem.out.println("jumped from col " + jumpFromCol + " to col " + jumpToCol);
 	  return(((fromCol-toCol) == 2) || ((fromCol-toCol) == -2));
 		
 	}
@@ -762,9 +769,16 @@ public class GamePanel extends JFrame {
 		}
 	}
 	
+	public void printValid(Slot p){
+		System.out.println("Valid points for Piece being moved: ");
+		for (int i = 0 ; i < p.xValid.size() ; i++){
+			System.out.print("(" + p.xValid.get(i) + ", " + p.yValid.get(i) + ") , ");
+
+		}
+	}
 
 	public static void main (String[] args){
 		GamePanel p = new GamePanel();
 	}
-
+}
 
