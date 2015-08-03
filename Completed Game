@@ -1,0 +1,823 @@
+package New_Checkers;
+
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
+import java.awt.Image;
+import java.net.URL;
+import java.io.*;
+import java.util.Map;
+import java.awt.font.TextAttribute;
+
+
+import javax.imageio.ImageIO;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JPanel;
+import javax.swing.ImageIcon;
+import javax.swing.SwingConstants;
+import javax.swing.JOptionPane;
+
+
+
+//gameBoard Panel
+public class Checkers extends JFrame {
+
+	private static final int NBOX = 8;	//number of boxes
+	private static final int LBOX = 60;	//box length
+	private static final int MAXXY = NBOX * LBOX;	//max panel size for x and y
+	private static final Color Black = new Color(0x726363);
+	private static final Color White = new Color(0xffffff);
+	private static final Color Red = new Color(0xF70000);
+	private static final Color DBlack = new Color(0x000000);
+    private Slot[][] boardArray;
+    private Image[] checkerPieces = new Image[4];
+    private char turn; 
+    JLabel playerTurn;
+    JLabel lastMoves = new JLabel("\tLast Moves", SwingConstants.CENTER);
+    JLabel blackLastMove = new JLabel("");
+    JLabel blackJump = new JLabel("");
+    JLabel redLastMove = new JLabel("");
+    JLabel redJump = new JLabel("");
+    
+    JLabel RemBlackPieces = new JLabel("\t\tRemaining Black Pieces: 12\t\t");
+    JLabel RemRedPieces = new JLabel ("\t\tRemaining Red Pieces: 12\t\t");
+    
+    JPanel p1;
+    JPanel buttonPanel;
+    JPanel lastMovesPanel;
+    JButton play;
+    JButton rules;
+    Slot prevPiece;
+    Slot jumpedPiece;
+    boolean handleJump;
+    private int blackPieces = 12;
+    private int redPieces = 12;
+    private int jumpFromRow;
+    private int jumpToRow;
+    private int jumpFromCol;
+    private int jumpToCol;
+    
+   
+    
+    
+	public Checkers(){
+        super("Checkers");
+        setSize(1000, 1000);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        p1 = new JPanel();
+        p1.setSize(500, 500);
+        p1.setLayout(new GridLayout(8,8));
+		playerTurn = new JLabel("Click Play to begin", SwingConstants.CENTER);
+		boardArray = new Slot[NBOX][NBOX];
+		
+		//create JPanel that will hold "play" and "rules" buttons
+		buttonPanel = new JPanel();
+		buttonPanel.setSize(200,200);
+		buttonPanel.setLayout(new GridLayout(1,2));
+		
+		//create JPanel to display each player's last move and remaining pieces
+		lastMovesPanel = new JPanel();
+		lastMovesPanel.setSize(300, 300);
+		lastMovesPanel.setLayout(new GridLayout(7, 1));
+		lastMovesPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+		lastMovesPanel.add(lastMoves);
+		Font font = lastMoves.getFont();
+		Map attributes = font.getAttributes();
+		attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
+		lastMoves.setFont(font.deriveFont(attributes));
+		lastMovesPanel.add(blackLastMove);
+		lastMovesPanel.add(redLastMove);
+		lastMovesPanel.add(RemBlackPieces);
+		lastMovesPanel.add(RemRedPieces);
+		
+		//JButtons for "play" and "rules"
+		play = new JButton("Play!");
+		rules = new JButton("Rules");
+		
+		//create Images for checker pieces
+		makePieces();
+
+		//set game board to initial game state
+		for (int row = 0; row <NBOX ; row++){
+			for (int col = 0; col <NBOX; col++){
+				if ((row + col) % 2 == 0){
+					if (col < 3){
+						boardArray[row][col] = new Slot(true, 'b');
+						//(boardArray[row][col]).b.setText("Black");
+						(boardArray[row][col]).b.setIcon(new ImageIcon(checkerPieces[1]));
+						(boardArray[row][col]).b.setDisabledIcon(new ImageIcon(checkerPieces[1]));
+						boardArray[row][col].b.addActionListener(new PieceHandler(boardArray[row][col]));
+
+					}
+					else if (col > 4){
+						boardArray[row][col] = new Slot(true, 'r');
+						//(boardArray[row][col]).b.setText("Red");
+						(boardArray[row][col]).b.setIcon(new ImageIcon(checkerPieces[0]));
+						(boardArray[row][col]).b.setDisabledIcon(new ImageIcon(checkerPieces[0]));
+						boardArray[row][col].b.addActionListener(new PieceHandler(boardArray[row][col]));
+
+					}
+					else{
+						boardArray[row][col] = new Slot();
+						boardArray[row][col].b.addActionListener(new SlotHandler(boardArray[row][col]));
+					}
+					boardArray[row][col].setBackground(Black);
+					boardArray[row][col].b.setPreferredSize(new Dimension(50, 50));
+					p1.add(boardArray[row][col].b);
+					
+				}
+				else{
+					boardArray[row][col] = new Slot();
+					boardArray[row][col].setBackground(White);
+					p1.add(boardArray[row][col].b);	
+					boardArray[row][col].b.addActionListener(new SlotHandler(boardArray[row][col]));
+
+				}
+				boardArray[row][col].b.setOpaque(true);
+				boardArray[row][col].b.setEnabled(false);
+			}
+		}
+		PlayHandler phandler = new PlayHandler();
+		play.addActionListener(phandler);
+		rules.addActionListener(phandler);
+		buttonPanel.add(play);
+		buttonPanel.add(rules);
+		add(p1);
+		add(buttonPanel, BorderLayout.NORTH);
+        add(playerTurn, BorderLayout.SOUTH);
+        add(lastMovesPanel, BorderLayout.EAST);
+        JMenu checkerMenu = new JMenu("Game Options");
+        checkerMenu.setMnemonic('O');
+        JMenuItem newGame = new JMenuItem("New Game");
+        newGame.setMnemonic('N');
+        checkerMenu.add(newGame);
+        newGame.addActionListener(new ActionListener(){
+        		@Override
+                public void actionPerformed(ActionEvent e){
+        		   dispose();
+                   new Checkers();      
+                }
+        });
+        
+        JMenuBar bar = new JMenuBar();
+        bar.add(checkerMenu);
+        this.setJMenuBar(bar);
+        this.setVisible(true);
+	}
+	
+	public void deActivateBoard(){
+		for (int row = 0; row <NBOX ; row++){
+			for (int col = 0; col <NBOX; col++){
+				if (boardArray[col][row].b.isEnabled()){
+					boardArray[col][row].b.setEnabled(false);
+					boardArray[col][row].b.setBorder(boardArray[col][row].border1);
+				}
+			}
+		}
+	}
+	
+
+	
+		//oldRow/oldCol piece thats moving
+	//row/col is possible places above piece can move
+	public  void validPoint(Slot p, int col, int row, int oldCol, int oldRow){
+		if((row > 7 | col >7) | (row < 0 | col < 0)){
+			p.setValid(false);
+			return;
+		}
+
+		//check if that slot holds a piece
+		if(boardArray[row][col].isPiece){
+			//handle situation in which there is a valid move that entails a jump
+			if ((boardArray[row][col]).turn != p.turn){
+				if ((boardArray[row][col]).turn == 'b'){
+					//handle a red piece trying to jump over a black piece 
+					if(col == 0){
+						p.setValid(false);
+						return;
+					}
+					if (row > oldRow){
+						if ((oldRow + 2) <= 7 && (oldCol -2 >= 0)){
+							if (!boardArray[oldRow+2][oldCol-2].isPiece){
+								//TODO: remove piece at location boardArray[row][col] and decrement piece counter for black
+								//if place you would jump to is not a piece then set valid 
+								p.addValid(oldRow+2, oldCol-2);
+								p.setValid(true);
+							}
+							else {
+								p.setValid(false);
+							}
+						}
+
+					}
+					else if (row < oldRow){
+						if ((oldRow - 2) >= 0 && (oldCol-2 >= 0)){
+							if (!boardArray[oldRow-2][oldCol-2].isPiece){
+								//TODO: remove piece at location boardArray[row][col] and decrement piece counter for black
+								//if place you would jump to is not a piece then set valid 
+								p.addValid(oldRow - 2, oldCol-2);
+								p.setValid(true);
+							}
+							else {
+								p.setValid(false);
+							}
+						}
+
+					}	
+					else {
+						System.out.println("SHOULD NEVER PRINT");
+					}	
+				}
+				else if ((boardArray[row][col]).turn =='r'){
+					//handle a black piece trying to jump over a red piece 
+					if(col == 7)
+					{
+						p.setValid(false);
+						return;
+					}
+					if (row > oldRow){
+						if ((oldRow + 2) <= 7 && (oldCol+2 <= 7)){
+							if (boardArray[oldRow+2][oldCol+2].isPiece == false){
+								//if place you would jump to is not a piece then set valid 
+								//TODO: remove piece at location boardArray[row][col] and decrement piece counter for red
+								p.addValid(oldRow + 2, oldCol + 2);
+								p.setValid(true);
+							}
+							else{
+								p.setValid(false);
+							}
+						}
+
+					}
+					else if (row < oldRow){
+						if ((oldRow - 2) >= 0 && (oldCol+2 <= 7)){
+							if (boardArray[oldRow-2][oldCol+2].isPiece == false){
+								//if place you would jump to is not a piece then set valid 
+								//TODO: remove piece at location boardArray[row][col] and decrement piece counter for red
+								p.addValid(oldRow-2, oldCol+2);
+								p.setValid(true);
+							}
+							else {
+								p.setValid(false);
+							}
+						}
+
+					}	
+					else{
+						System.out.print("Problem Encountered 1");
+					}
+				}
+				
+
+			}
+			//handle situation in which piece is players own piece 
+			else{
+				p.setValid(false);
+			}
+		}
+		else{	//else being that the position is empty/contains a slot not a piece and hence is a valid move making this a valid piece
+			p.addValid((row), (col));
+			p.setValid(true);
+		}
+
+	}
+
+	public boolean isValidKing(Slot p, int y, int x){
+		if(p.isKing){
+			if(p.turn == 'b'){
+				  if (y == 0){
+					  validKingPoint(p, (x-1), (y+1), x , y);
+				  }
+				  else if (y ==  7){
+					  validKingPoint(p, (x-1), (y-1), x , y);
+				  }
+				  else {
+
+					  boolean temp = false;
+					  validKingPoint(p, (x-1), (y-1), x , y);
+					  if (p.valid)
+						  temp = true;
+					  validKingPoint(p, (x-1), (y+1), x , y);
+					  if (temp)
+						  p.setValid(true);
+				  }
+			}
+			else if(p.turn == 'r'){
+				  if (y == 0){					//[x+1][y+1] is only valid position a black piece can move to from (x,y) if y = 0
+					  validKingPoint(p, (x+1), (y+1), x , y);
+			      }
+				
+				  else if (y == 7){
+					//check [x+1][y-1]
+					//check if that slot holds a piece
+					  validKingPoint(p, (x+1), (y-1), x , y);
+				  }
+				  else {
+					  boolean temp = false;
+					  validKingPoint(p, (x+1), (y+1), x, y);
+					  if (p.valid)
+						  temp = true;
+					  validKingPoint(p, (x+1), (y-1), x, y);
+					  if (temp)
+						  p.setValid(true);
+				  }
+			}
+		}
+		
+		return p.getValid();
+	}
+	
+	//returns if there are any possible moves for a slot and if there are activates them and ads them to the validMoves array
+	public boolean isValid(Slot p, int y, int x){
+	
+		if (p.turn == 'b'){
+			//Black is its own case because black goes left to right 
+			//check cases y=0 and y=7 to avoid array out of bounds exception
+			  if (y == 0){					//[x+1][y+1] is only valid position a black piece can move to from (x,y) if y = 0
+				  validPoint(p, (x+1), (y+1), x , y);
+				 
+		      }
+			
+			  else if (y == 7){
+				//check [x+1][y-1]
+				//check if that slot holds a piece
+				 
+				  validPoint(p, (x+1), (y-1), x , y);
+				
+			  }
+			  else {
+				  
+					  boolean temp = false;
+					  validPoint(p, (x+1), (y+1), x, y);
+					  if (p.valid)
+						  temp = true;
+					  validPoint(p, (x+1), (y-1), x, y);
+					  if (temp)
+						  p.setValid(true);
+				  
+			  }
+		}
+		
+		else if (p.turn == 'r'){
+			//r is a different circumstance because red player goes right to left
+			//check cases y=0 and y=7 to avoid array out of bounds exception
+			  if (y == 0){
+				  validPoint(p, (x-1), (y+1), x , y);
+			  }
+			  else if (y ==  7){
+				  validPoint(p, (x-1), (y-1), x , y);
+			  }
+			  else {
+
+				  boolean temp = false;
+				  validPoint(p, (x-1), (y-1), x , y);
+				  if (p.valid)
+					  temp = true;
+				  validPoint(p, (x-1), (y+1), x , y);
+				  if (temp)
+					  p.setValid(true);
+			  }
+		}
+		  
+		return p.getValid();
+    }
+	
+	
+	private void validKingPoint(Slot p, int col, int row, int oldCol, int oldRow) {
+		// TODO Auto-generated method stub
+		if((row > 7 | col >7) | (row < 0 | col < 0)){
+			p.setValid(false);
+			return;
+
+		}	
+
+		if(boardArray[row][col].isPiece){
+					//handle situation in which there is a valid move that entails a jump
+					if ((boardArray[row][col]).turn != p.turn){
+						if((col == 7) | col == 0)
+						{
+							p.setValid(false);
+							return;
+						}
+						if (row > oldRow){ //
+							if ((oldRow + 2) <= 7 && (oldCol -2 >= 0)){
+								if (!boardArray[oldRow+2][oldCol-2].isPiece){
+									//TODO: remove piece at location boardArray[row][col] and decrement piece counter for black
+									//if place you would jump to is not a piece then set valid 
+									p.addValid(oldRow+2, oldCol-2);
+									p.setValid(true);
+									
+								}
+								else {
+									p.setValid(false);
+
+								}
+							}
+							if ((oldRow + 2) <= 7 && (oldCol+2 <= 7)){
+								if (boardArray[oldRow+2][oldCol+2].isPiece == false){
+									//if place you would jump to is not a piece then set valid 
+									//TODO: remove piece at location boardArray[row][col] and decrement piece counter for red
+									p.addValid(oldRow + 2, oldCol + 2);
+									p.setValid(true);
+									
+								}
+								else{
+									p.setValid(false);
+								}
+							}
+						}
+						else if (row < oldRow){
+							if ((oldRow - 2) >= 0 && (oldCol-2 >= 0)){
+								if (!boardArray[oldRow-2][oldCol-2].isPiece){
+									//TODO: remove piece at location boardArray[row][col] and decrement piece counter for black
+									//if place you would jump to is not a piece then set valid 
+									p.addValid(oldRow - 2, oldCol-2);
+									p.setValid(true);
+									
+								}
+								else {
+									p.setValid(false);
+									
+								}
+							}
+							if ((oldRow - 2) >= 0 && (oldCol+2 <= 7)){
+								if (boardArray[oldRow-2][oldCol+2].isPiece == false){
+									//if place you would jump to is not a piece then set valid 
+									//TODO: remove piece at location boardArray[row][col] and decrement piece counter for red
+									p.addValid(oldRow-2, oldCol+2);
+									p.setValid(true);
+									
+								}
+								else {
+									p.setValid(false);
+									
+								}
+							}
+						}
+						else {
+							System.out.println("SHOULD NEVER PRINT");
+						} //
+						
+				    }
+					//handle situation in which piece is players own piece 
+				    else{
+						    p.setValid(false);
+				    }
+		}
+		else{	//else being that the position is empty/contains a slot not a piece and hence is a valid move making this a valid piece
+			p.addValid((row), (col));
+			p.setValid(true);
+		}
+
+	
+		
+
+		
+		
+	}
+
+	//sets valid checkers that player can touch 
+	public void setValid(char t){
+		boolean endGame = true;
+		for (int row = 0; row <NBOX ; row++){
+			for (int col = 0; col <NBOX; col++){
+				//if the slot contains a piece, the piece can be moved validly and the piece belongs to the current player then activate that valid piece
+				if ((boardArray[row][col].isPiece && boardArray[row][col].getTurn() == t )){
+					if (isValid((boardArray[row][col]), row , col) | (isValidKing((boardArray[row][col]), row , col))){
+						boardArray[row][col].activate();
+						endGame = false;
+					}
+				}
+			}
+		}
+		if(endGame){
+			String gameOver = "";
+			if(t == 'b'){
+				gameOver = "Red Player Wins";
+			}
+			else if(t == 'r'){
+				gameOver = "Black Player Wins";
+			}
+			playerTurn.setText(gameOver);
+			deActivateBoard();
+			
+		}
+	}
+	
+	public class PlayHandler implements ActionListener{
+
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			if(e.getSource() == play){
+			  // TODO Auto-generated method stub
+			  playerTurn.setText("Blacks turn");
+			  setValid('b');
+			  play.setEnabled(false);
+			}
+			else if(e.getSource() == rules){
+				final ImageIcon icon = new ImageIcon("http://www.cns.nyu.edu/lcv/texture/artificial-periodic/checkerboard.small-o.jpg");
+				String gameRules = "Each player will get 12 pieces each (Black or Red). \nThe goal of the";
+				gameRules += " game is to eliminate all of your opponents pieces by 'jumping' them, or by\n";
+				gameRules += "preventing your opponent from having any valid moves. ";
+				gameRules += "Black pieces may only move diagonally to the right across the board, and Red\n";
+				gameRules += "pieces may only move diagonally to the left across the board. Kings, which are obtained\n";
+				gameRules += "by getting a piece all the way to the other side of the board, can move diagonally in either direction. Enjoy!";
+				JOptionPane.showMessageDialog(Checkers.this, gameRules, "Checker Rules", JOptionPane.INFORMATION_MESSAGE, icon);
+			}
+		}
+		
+	}
+	
+	public class PieceHandler implements ActionListener{
+		private final New_Checkers.Slot piece;
+
+		public PieceHandler(Slot p) {
+			this.piece = p;
+		}
+		
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			//handle initial valid piece click and respond by highlighting valid places that piece can go
+			printValidMoves(piece);
+			prevPiece = this.piece;
+			
+			
+			//Find coordinates of clicked piece
+			for (int ii = 0; ii < boardArray.length; ii++) {
+	            for (int jj = 0; jj < boardArray[ii].length; jj++) {
+	            	if(e.getSource() == boardArray[ii][jj].b){
+	            	   jumpFromRow = ii;
+	            	   jumpFromCol = jj;
+	            	}
+	            }
+	        }
+			
+			
+			//empty valid arrays for all pieces of that turn that are valid, do this to instantiate the arrays with updated variables later
+			for (int row = 0; row <NBOX ; row++){
+				for (int col = 0; col <NBOX; col++){
+					if ((boardArray[row][col].isPiece && boardArray[row][col].getTurn() == prevPiece.getTurn() )){
+						if(boardArray[row][col].valid)
+							clearValid(boardArray[row][col]);
+					}
+				}
+			}
+
+		}
+		
+	}
+	
+	public class SlotHandler implements ActionListener{
+		private New_Checkers.Slot slot;
+		
+		public SlotHandler(Slot s){
+			this.slot = s;
+		}
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			//Move previous selected piece to whatever valid location is clicked
+			//remove action listeners from both slot and piece 
+			boolean cont = true;
+		    for( ActionListener al : slot.b.getActionListeners() ) 
+		        slot.b.removeActionListener( al );
+			
+		    for( ActionListener al : prevPiece.b.getActionListeners() )
+		        prevPiece.b.removeActionListener( al );
+		    
+		    slot.b.addActionListener(new PieceHandler(this.slot));
+		    prevPiece.b.addActionListener(new SlotHandler(prevPiece));
+		    
+			Slot temp = new Slot();
+			temp.equals(this.slot);
+			this.slot.equals(prevPiece);
+			prevPiece.equals(temp);
+			
+			//add icons to selected slot
+			if(this.slot.turn=='b'){
+				if(this.slot.isKing){
+					this.slot.b.setIcon(new ImageIcon(checkerPieces[3]));
+					this.slot.b.setDisabledIcon(new ImageIcon(checkerPieces[3]));
+				}
+				else{
+					this.slot.b.setIcon(new ImageIcon(checkerPieces[1]));
+				    this.slot.b.setDisabledIcon(new ImageIcon(checkerPieces[1]));
+				}
+			}
+			else if(this.slot.turn=='r'){
+				if(this.slot.isKing){
+					this.slot.b.setIcon(new ImageIcon(checkerPieces[2]));
+					this.slot.b.setDisabledIcon(new ImageIcon(checkerPieces[2]));
+				}
+				else{
+					this.slot.b.setIcon(new ImageIcon(checkerPieces[0]));
+				    this.slot.b.setDisabledIcon(new ImageIcon(checkerPieces[0]));
+				}
+			}
+			prevPiece.b.setIcon(null);
+			
+			//Find coordinates of selected slot
+			for (int row = 0; row < boardArray.length; row++) {
+	            for (int col = 0; col < boardArray[row].length; col++){
+	            	if(e.getSource() == boardArray[row][col].b){
+	            		jumpToRow = row;
+	            		jumpToCol = col;
+	            	}
+	            }
+	        }
+
+			//Update each player's last move
+			if(this.slot.turn == 'b'){
+				blackLastMove.setText("\t\tBlack Last Move [Row,Col]: Moved from [" + String.valueOf(jumpFromRow) + "," + String.valueOf(jumpFromCol) + "]\t");
+				blackLastMove.setText(blackLastMove.getText() + "to [" + String.valueOf(jumpToRow) + "," + String.valueOf(jumpToCol) + "]\t\t");
+			}
+			else if(this.slot.turn == 'r'){
+				redLastMove.setText("\t\tRed Last Move [Row,Col]: Moved from [" + String.valueOf(jumpFromRow) + "," + String.valueOf(jumpFromCol) + "]\t");
+				redLastMove.setText(redLastMove.getText() + "to [" + String.valueOf(jumpToRow) + "," + String.valueOf(jumpToCol) + "]\t\t");
+			}
+		
+			//call isJump method 
+			if(isJump(jumpFromCol, jumpToCol)){
+				//compare row values here to determine where jumped piece is then
+				//set it to jumpedPiece = boardArray[row][col]
+				if(jumpFromCol < jumpToCol){
+					if(jumpFromRow < jumpToRow){
+						jumpedPiece = boardArray[jumpToRow-1][jumpToCol-1];
+					}
+					else if(jumpFromRow > jumpToRow){
+						jumpedPiece = boardArray[jumpToRow+1][jumpToCol-1];
+					}
+					
+				}
+				else if(jumpFromCol > jumpToCol){
+					if(jumpFromRow < jumpToRow){
+						jumpedPiece = boardArray[jumpToRow-1][jumpToCol+1];
+					}
+					else if(jumpFromRow > jumpToRow){
+						jumpedPiece = boardArray[jumpToRow+1][jumpToCol+1];
+					}
+				}
+				//remove data and actionListeners from jumped piece
+				jumpedPiece.b.setText("");
+				jumpedPiece.b.setIcon(null);
+			    for( ActionListener al : jumpedPiece.b.getActionListeners() )
+			        jumpedPiece.b.removeActionListener( al );
+			    //add slot listener to jumped piece
+			    jumpedPiece.b.addActionListener(new SlotHandler(jumpedPiece));
+			    Slot temp2 = new Slot();
+			    jumpedPiece.equals(temp2);
+			    
+			    
+				if(this.slot.turn == 'b')
+					redPieces--; //red piece was jumped
+				else if(this.slot.turn == 'r')
+					blackPieces--; //black piece was jumped
+				
+				//determine if game is over
+				if(redPieces == 0 || blackPieces == 0){
+					char winner = this.slot.turn;
+					String gameOver = "";
+					
+					if(winner == 'b'){
+						gameOver = "Black Player Wins!";
+					}
+					else if(winner == 'r'){
+						gameOver = "Red Player Wins!";
+					}
+					playerTurn.setText(gameOver);
+					deActivateBoard();
+					cont = false;
+				}
+				/*else if (){
+					check if there are any valid moves for next person's turn
+				}*/
+				
+				RemBlackPieces.setText("Remaining Black Pieces: " + String.valueOf(blackPieces) + "\t\t");
+				RemRedPieces.setText("Remaining Red Pieces: " + String.valueOf(redPieces) + "\t\t");
+				
+			}
+			
+			if (cont){
+				deActivateBoard();
+				clearValid(this.slot);	//clear pieces valid moves for next turn
+			
+				if (this.slot.turn=='b'){
+					playerTurn.setText("Reds Turn");
+					/* call isKing method which will
+					*  run through boardArray and check if 
+				 	*  x value is 7
+				 	*/
+					checkKing('b');
+					
+					setValid('r');
+				
+				}
+				else if (this.slot.turn=='r'){
+					playerTurn.setText("Blacks Turn");
+					/* call isKing method which will
+					 *  run through boardArray and check if 
+					 *  x value is 0
+					 */
+					checkKing('r');
+					setValid('b');			
+				}
+				else {
+					System.out.println("ran into a problem");
+				}
+		
+			}
+		}
+		
+	}
+	
+	public boolean isJump(int fromCol, int toCol){
+	  return(((fromCol-toCol) == 2) || ((fromCol-toCol) == -2));
+		
+	}
+	
+	public void checkKing(char c){
+		if(c == 'b'){
+
+			for(int row=1; row<7;row+=2)
+			{
+				if((boardArray[row][7].isPiece) && ((boardArray[row][7]).turn == 'b')){
+					(boardArray[row][7]).isKing = true;
+					(boardArray[row][7]).b.setIcon(new ImageIcon(checkerPieces[3]));
+					(boardArray[row][7]).b.setDisabledIcon(new ImageIcon(checkerPieces[3]));
+				}
+			}
+		}
+		else if(c == 'r'){
+
+			for(int row=0; row<6;row+=2)
+			{
+				if((boardArray[row][0].isPiece) && ((boardArray[row][0]).turn == 'r')){
+					(boardArray[row][0]).isKing = true;
+					(boardArray[row][0]).b.setIcon(new ImageIcon(checkerPieces[2]));
+					(boardArray[row][0]).b.setDisabledIcon(new ImageIcon(checkerPieces[2]));
+				}
+			}
+		}
+	}
+	
+	public void clearValid(Slot piece) {
+		if(!piece.colValid.isEmpty() && !piece.rowValid.isEmpty()){
+		piece.rowValid.clear();
+		piece.colValid.clear();
+		}
+
+	}
+	
+	public void printValidMoves(Slot piece){
+		deActivateBoard();
+		for (int i = 0; i< piece.colValid.size(); i++){
+			boardArray[piece.rowValid.get(i)][ piece.colValid.get(i)].activate();
+		}	
+	}
+	
+	private final void makePieces(){
+		try{
+            URL redPiece = new URL("http://i61.tinypic.com/n6thrl.jpg");
+            BufferedImage rp = ImageIO.read(redPiece);
+            URL blackPiece = new URL("http://i58.tinypic.com/28b9myx.jpg");
+            BufferedImage  bp = ImageIO.read(blackPiece);
+            URL redKing = new URL("http://i60.tinypic.com/2m4t6c0.jpg");
+            BufferedImage rk = ImageIO.read(redKing);
+            URL blackKing = new URL("http://i62.tinypic.com/2chkkf9.jpg");
+            BufferedImage bk = ImageIO.read(blackKing);
+            checkerPieces[0] = rp.getSubimage(0, 0, 45, 45);
+            checkerPieces[1] = bp.getSubimage(0, 0, 45, 45);
+            checkerPieces[2] = rk.getSubimage(0, 0, 45, 45);
+            checkerPieces[3] = bk.getSubimage(0, 0, 45, 45);
+            
+		}
+		catch(Exception e){
+			e.printStackTrace();
+			System.exit(1);
+			
+		}
+	}
+	
+
+	public static void main (String[] args){
+		Checkers p = new Checkers();
+	}
+
+
+}
