@@ -1,0 +1,20 @@
+	//sets valid checkers that player can touch 
+	public void setValid(char t){
+		boolean endGame = true;
+		for (int row = 0; row <NBOX ; row++){
+			for (int col = 0; col <NBOX; col++){
+				//if the slot contains a piece, the piece can be moved validly and the piece belongs to the current player then activate that valid piece
+				if ((boardArray[row][col].isPiece && boardArray[row][col].getTurn() == t )){
+					if (isValid((boardArray[row][col]), row , col) | (isValidKing((boardArray[row][col]), row , col))){
+						boardArray[row][col].activate();
+						endGame = false;
+					}
+				}
+			}
+		}
+		if (endGame){
+			String gameOver = "Player " + t + " Loses";
+			playerTurn.setText(gameOver);
+			deActivateBoard();
+		}
+	}
